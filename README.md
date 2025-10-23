@@ -58,7 +58,7 @@ Configuration is done via environment variables:
 ## Development
 
 ### Prerequisites
-- Rust 1.75 or later
+- Rust 1.90 or later
 - Docker (optional)
 
 ### Build
