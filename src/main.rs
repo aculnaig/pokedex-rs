@@ -7,6 +7,7 @@ use axum::{
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use async_trait::async_trait;
+use tokio::signal;
 
 #[tokio::main]
 async fn main() {
@@ -28,8 +29,43 @@ async fn main() {
     // Listen on port 5000
     let listener =
         tokio::net::TcpListener::bind("0.0.0.0:5000").await.unwrap();
+
     println!("Server running on http://0.0.0.0:5000");
-    axum::serve(listener, app).await.unwrap();
+
+
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await
+        .unwrap();
+}
+
+// Graceful shutdown handler
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        signal::ctrl_c()
+            .await
+            .expect("failed to install Ctrl+C handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("failed to install signal handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {
+            println!("Received Ctrl+C, starting graceful shutdown...");
+        },
+        _ = terminate => {
+            println!("Received SIGTERM, starting graceful shutdown...");
+        },
+    }
 }
 
 // Trait for Pokemon processing strategies
