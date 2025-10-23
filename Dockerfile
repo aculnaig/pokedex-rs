@@ -32,5 +32,9 @@ COPY --from=builder /app/target/release/pokedex /pokedex
 # Expose port 5000
 EXPOSE 5000
 
+# Add health check metadata
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+CMD ["/pokedex", "--version"] || exit 1
+
 # Run the binary
 CMD ["/pokedex"]
